@@ -105,7 +105,7 @@ class ReaperMediaItem(object):
 
 class ReaperFX(object):
     def __init__(self):
-
+        pass
 
 
 class ReaperTrack(object):
@@ -141,7 +141,7 @@ class ReaperTrack(object):
     def db(self):
         volume = RPR_GetMediaTrackInfo_Value(self.id, 'D_VOL')
         return (20 * log(volume)) / log(10)
-    
+
     @db.setter
     def db(self, value):
         volume = 10 ** (float(value) / 20)
