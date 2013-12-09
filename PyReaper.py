@@ -1,28 +1,28 @@
-#RPR_APITest()
+# Forked from brentelliott/PyReaper (PyReaper v0.00002 by Brent Elliott)
+# https://github.com/brentelliott/PyReaper
 
-#PyReaper v0.00002
-#by Brent Elliott
-
-
-#ReaperProject
-##get_all_tracks
-##get_all_media_items
-##get_all_takes
-
-#ReaperTrack
-##get_all_children
-##get_all_media_items
-#ReaperFX
-
-
-##ReaperMediaItem
-##ReaperTake
-
-####get_tracks(selected=True)
-####gradient(listOfItemsOrTracks, colorA, colorB)
-
-
+from reaper_python import *
 from math import log
+from contextlib import contextmanager
+
+@contextmanager
+def undoable(message):
+    """ Call "RPR_Undo_EndBlock()" automatically even when the script crashes. Very useful for testing and debugging.
+        And using "with" statement keeps the actual script code clean and readable."""
+    RPR_Undo_BeginBlock2(0)
+    try:
+        yield
+    finally:
+        RPR_Undo_EndBlock2(0,message,-1)
+
+@contextmanager
+def noUIRefresh():
+    """ Call RPR_PreventUIRefresh(-1) automatically even when the script crashes."""
+    RPR_PreventUIRefresh(1)
+    try:
+        yield
+    finally:
+        RPR_PreventUIRefresh(-1)
 
 def msg(m):
     RPR_ShowConsoleMsg(m)
@@ -57,6 +57,7 @@ class ReaperMediaItem(object):
         for take in range(num_takes):
             takes.append(RPR_GetMediaItemTake(self.id, take))
         return takes
+
     #mute
     @property
     def mute(self):
@@ -72,25 +73,13 @@ class ReaperMediaItem(object):
         else:
             RPR_SetMediaItemInfo_Value(self.id, 'B_MUTE', 0.0)
 
-
-
-
-    @property
-    def length(self):
-        return RPR_GetMediaItemInfo_Value(self.id, 'D_LENGTH')
-
-    @length.setter
-    def length(self, l):
-        pass
-
-
     @property
     def position(self):
         return RPR_GetMediaItemInfo_Value(self.id, 'D_POSITION')
 
     @position.setter
     def position(self, l):
-        RPR_GetMediaItemInfo_Value(self.id, 'D_POSITION', l)
+        RPR_SetMediaItemInfo_Value(self.id, 'D_POSITION', l)
 
 
     @property
@@ -99,7 +88,7 @@ class ReaperMediaItem(object):
 
     @length.setter
     def length(self, l):
-        RPR_GetMediaItemInfo_Value(self.id, 'D_LENGTH', l)
+        RPR_SetMediaItemInfo_Value(self.id, 'D_LENGTH', l)
 
 
 
@@ -132,9 +121,6 @@ class ReaperTrack(object):
     @volume.setter
     def volume(self, value):
         RPR_SetMediaTrackInfo_Value(self.id, 'D_VOL', value)
-
-
-
 
     #db getter and setter
     @property
@@ -291,14 +277,10 @@ class ReaperTrack(object):
         else:
             raise TypeError
 
-
-
-
     #selection
     @property
     def selected(self):
-        flag = RPR_GetTrackState(self.id, 0)[2]
-        if flag & 2:
+        if RPR_GetMediaTrackInfo_Value(self.id, 'I_SELECTED') == 1.0:
             return True
         else:
             return False
@@ -309,12 +291,6 @@ class ReaperTrack(object):
             RPR_SetTrackSelected(self.id, 1)
         else:
             RPR_SetTrackSelected(self.id, 0)
-
-
-
-
-
-
 
 
 def get_all_tracks():
@@ -328,33 +304,3 @@ def get_selected_tracks():
     for i in range(RPR_CountSelectedTracks(0)):
         tracks.append(ReaperTrack(RPR_GetSelectedTrack(0, i)))
     return tracks
-
-
-
-
-
-
-for track in get_all_tracks():
-    #track.phase_invert = True
-    #track.record_monitor = 2
-    #track.fx_enabled = True
-    #track.record_arm = True
-    #track.db = track.db -0.5
-    #track.color = '#000000'
-    media_items = track.get_all_media_items()
-    if media_items:
-        for item in media_items:
-            for take in item.get_all_takes():
-                msg(take)
-
-        #track.color = (100,100,100)
-        #track.db = 0
-        #track.pan = -0.1
-        #msg(track.phase_reverse)
-        #msg(track.phase_reverse)
-    #if track.name.startswith('dick'):
-    #    msg(track.volume)
-    #track.solo = 0
-    #track.get_media_items()
-    #for each in track.media_items:
-    #   msg(time_to_beats(each.position))
